@@ -2,7 +2,6 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
-		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 		<CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
 		<IsRoslynComponent>true</IsRoslynComponent>
@@ -10,8 +9,42 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
 		<LangVersion>Latest</LangVersion>
+
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Authors>Tedd Hansen</Authors>
+		<Company>Tedd Hansen</Company>
+		<Description>Source generator for duplicating structs to a read-only copy.</Description>
+		<PackageTags>Source Generator Struct Read-Only</PackageTags>
+		<Copyright>Tedd Hansen</Copyright>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageProjectUrl>https://github.com/tedd/Tedd.ReadOnlyStructGenerator</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/tedd/Tedd.ReadOnlyStructGenerator.git</RepositoryUrl>
+		<RepositoryType>Git</RepositoryType>
+		<Version>1.0.0</Version>
+		<PackageLicenseExpression></PackageLicenseExpression>
+		<SignAssembly>false</SignAssembly>
+		<DelaySign>false</DelaySign>
+		<AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
+		<PackageReleaseNotes>Initial release.</PackageReleaseNotes>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<None Include="..\..\LICENSE">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="..\..\README.md">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
+
+	<PropertyGroup>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
@@ -21,6 +54,5 @@
 	<ItemGroup>
 		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 	</ItemGroup>
-
 
 </Project>
