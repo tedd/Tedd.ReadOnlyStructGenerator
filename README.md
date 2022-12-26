@@ -28,11 +28,11 @@ public readonly struct ReadOnlyTest
         Z = value.Z;
     }
     
-	public ReadOnlyTest(float x, float y, float z)
-	{
-    	this.X = x;
-	    this.Y = y;
-	    this.Z = z;
-	}
+    public ReadOnlyTest(float x, float y, float z)
+    {
+        this.X = x;
+        this.Y = y;
+        this.Z = z;
+    }
 }
 ```
