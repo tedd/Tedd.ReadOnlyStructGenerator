@@ -2,14 +2,23 @@ using System.Runtime.InteropServices;
 
 namespace Tedd.ReadOnlyStructGenerator.Test;
 
-[GenerateReadOnlyStruct]
-[StructLayout(LayoutKind.Sequential)]
+[GenerateReadOnlyStruct(false,true)]
+[StructLayout(LayoutKind.Explicit)]
 public struct Test
 {
+    [FieldOffset(0)]
     public float X;
+    [FieldOffset(4)]
     public float Y;
+    [FieldOffset(8)]
     public float Z;
-    public float ZZZZZ;
+    
+    public Test(float x, float y, float z)
+    {
+        X = x;
+        Y = y;
+        Z = z;
+    }
 
 }
 
