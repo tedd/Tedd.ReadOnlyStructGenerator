@@ -27,10 +27,10 @@ public class {attributeName}Attribute: Attribute
     private readonly bool _generateConstructor = true;
     private readonly bool _generateCopyConstructor = true;
 
-    public {attributeName}Attribute(bool generateConstructor = true, bool generateCopyConstructor = true)
+    public {attributeName}Attribute(bool GenerateConstructor = true, bool GenerateCopyConstructor = true)
     {{
-        _generateConstructor = generateConstructor;
-        _generateCopyConstructor = generateCopyConstructor;
+        _generateConstructor = GenerateConstructor;
+        _generateCopyConstructor = GenerateCopyConstructor;
     }}
 
     public bool GenerateConstructor => _generateConstructor;
@@ -150,12 +150,13 @@ public class {attributeName}Attribute: Attribute
                 var fieldMembers = structDeclaration.Members.Where(w => w.IsKind(SyntaxKind.FieldDeclaration)).ToArray();//.ToArray();
                 var constructorMembers = structDeclaration.Members.Where(w => w.IsKind(SyntaxKind.ConstructorDeclaration)).ToArray();
                 var otherMembers = structDeclaration.Members.Where(w => !w.IsKind(SyntaxKind.FieldDeclaration) && !w.IsKind(SyntaxKind.ConstructorDeclaration)).ToArray();
+                var ctorFields = structDeclaration.Members.OfType<FieldDeclarationSyntax>().Where(w => !w.Modifiers.Any(a => a.IsKind(SyntaxKind.ConstKeyword))).SelectMany(field => field.Declaration.Variables).ToArray();
 
                 // Set fields to readonly
                 for (var i = 0; i < fieldMembers.Length; i++)
                 {
                     ref var field = ref fieldMembers[i];
-                    if (!field.Modifiers.Any(a => a.IsKind(SyntaxKind.ReadOnlyKeyword)))
+                    if (!field.Modifiers.Any(a => a.IsKind(SyntaxKind.ReadOnlyKeyword) || a.IsKind(SyntaxKind.ConstKeyword)))
                         field = field.AddModifiers(roToken);
                 }
                 // Rename constructors
@@ -193,7 +194,7 @@ public class {attributeName}Attribute: Attribute
                             .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("value")).WithType(SyntaxFactory.ParseTypeName(structName)))
                             // Add a body to the constructor that assigns the fields.
                             .WithBody(SyntaxFactory.Block(
-                                fields.Select(field => SyntaxFactory.ExpressionStatement(
+                                ctorFields.Select(field => SyntaxFactory.ExpressionStatement(
                                         SyntaxFactory.AssignmentExpression(
                                             SyntaxKind.SimpleAssignmentExpression,
                                             SyntaxFactory.IdentifierName(field.Identifier),
@@ -217,7 +218,7 @@ public class {attributeName}Attribute: Attribute
                                 .ToArray())
                             // Add a body to the constructor that assigns the fields.
                             .WithBody(SyntaxFactory.Block(
-                                fields.Select(field => SyntaxFactory.ExpressionStatement(
+                                ctorFields.Select(field => SyntaxFactory.ExpressionStatement(
                                         SyntaxFactory.AssignmentExpression(
                                             SyntaxKind.SimpleAssignmentExpression,
                                             SyntaxFactory.MemberAccessExpression(

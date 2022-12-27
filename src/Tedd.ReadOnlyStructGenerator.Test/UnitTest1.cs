@@ -6,6 +6,7 @@ namespace Tedd.ReadOnlyStructGenerator.Test;
 [StructLayout(LayoutKind.Explicit)]
 public struct Test
 {
+    public const int abc = 1;
     [FieldOffset(0)]
     public float X;
     [FieldOffset(4)]
