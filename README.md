@@ -42,10 +42,11 @@ public readonly struct ReadOnlyTest
 * GenerateConstructor
 * GenerateCopyConstructor
 
-This allows you to disable constructor generation, in case you already have that implemented.
+This allows you to prevent constructors from being generated, in case you already have that implemented.
 
 ```csharp
-[GenerateReadOnlyStruct(false, false)]
+[GenerateReadOnlyStruct(GenerateConstructor: false, GenerateCopyConstructor: false)]
+// Or just [GenerateReadOnlyStruct(false, false)]
 public struct Test
 {
     public float X;
