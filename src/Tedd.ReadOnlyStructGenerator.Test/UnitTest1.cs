@@ -58,7 +58,14 @@ public class UnitTest1
     [Fact]
     public void Test1()
     {
-        var ro = new ReadOnlyTest();
-        var ro2 = new ReadOnlyTest2();
+        var ro = new ReadOnlyTest(1,2,3);
+        Assert.Equal(1, ro.X);
+        Assert.Equal(2, ro.Y);
+        Assert.Equal(3, ro.Z);
+
+        var ro2 = new ReadOnlyTest2(3,2,1);
+        Assert.Equal(3, ro2.X);
+        Assert.Equal(2, ro2.Y);
+        Assert.Equal(1, ro2.Z);
     }
 }   

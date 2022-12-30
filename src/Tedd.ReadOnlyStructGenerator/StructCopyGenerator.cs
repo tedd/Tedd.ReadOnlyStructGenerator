@@ -138,7 +138,7 @@ public class {attributeName}Attribute: Attribute
             {
                 context.CancellationToken.ThrowIfCancellationRequested();
                 // Check if the attribute is the one we're looking for.
-                AttributeSyntax generateReadOnlyStructAttribute = null;
+                AttributeSyntax? generateReadOnlyStructAttribute = null;
                 foreach (var attribute in attributeList.Attributes)
                 {
                     if (attribute.Name.ToString() == attributeName)
@@ -246,7 +246,7 @@ public class {attributeName}Attribute: Attribute
                 }
 
                 // Get root of document
-                var root = structDeclaration.Parent;
+                var root = (SyntaxNode)structDeclaration;
                 while (root.Parent != null)
                     root = root.Parent;
 
