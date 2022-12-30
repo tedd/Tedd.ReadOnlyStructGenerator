@@ -41,7 +41,13 @@ public class {attributeName}Attribute: Attribute
         _generateCopyConstructor = GenerateCopyConstructor;
     }}
 
+    /// <summary>
+    /// Generate constructor for all fields.
+    /// </summary>
     public bool GenerateConstructor => _generateConstructor;
+    /// <summary>
+    /// Generate constructor for copying from this type.
+    /// </summary>
     public bool GenerateCopyConstructor => _generateCopyConstructor;
 }}", Encoding.ASCII);
 
