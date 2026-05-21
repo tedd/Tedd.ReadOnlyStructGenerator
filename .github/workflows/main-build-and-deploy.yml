@@ -49,7 +49,7 @@ jobs:
         #NUGET_SOURCE: https://api.nuget.org
 
         # Add symbols to NuGet package. (Default: false)
-        INCLUDE_SYMBOLS: false
+        INCLUDE_SYMBOLS: true
         
         # Current Git commit should be tagged upon successful upload to NuGet. (Default: false)
         TAG_COMMIT: true
