@@ -92,7 +92,7 @@ public class {attributeName}Attribute: Attribute
         context.RegisterSourceOutput(context.CompilationProvider, ExecuteIncremental);
         context.SyntaxProvider.CreateSyntaxProvider(
             static (n, _) => n is StructDeclarationSyntax,
-            static (n, _) => ((IMethodSymbol)n.SemanticModel.GetDeclaredSymbol(n.Node)).ReturnType.Kind);
+            static (n, _) => n.Node);
     }
 
 
@@ -228,7 +228,7 @@ public class {attributeName}Attribute: Attribute
                             .AddParameterListParameters(fields
                                 .Select(field => SyntaxFactory
                                     .Parameter(SyntaxFactory.Identifier(ToLowerFirstChar(field.Identifier.Text)))
-                                    .WithType(SyntaxFactory.ParseTypeName(((VariableDeclarationSyntax)field.Parent).Type.ToString())))
+                                    .WithType(SyntaxFactory.ParseTypeName(((VariableDeclarationSyntax)field.Parent!)?.Type.ToString() ?? "object")))
                                 .ToArray())
                             // Add a body to the constructor that assigns the fields.
                             .WithBody(SyntaxFactory.Block(

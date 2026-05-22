@@ -43,7 +43,6 @@
 	</ItemGroup>
 
 	<PropertyGroup>
-		<IncludeBuildOutput>false</IncludeBuildOutput>
 	</PropertyGroup>
 
 	<ItemGroup>

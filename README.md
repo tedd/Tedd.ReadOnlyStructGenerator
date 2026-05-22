@@ -107,7 +107,7 @@ public struct Test
         // This section is only applicable for the mutable version of this struct
         set {
             X = value.X;
-            Z = value.Y;
+            Y = value.Y;
             Z = value.Z;
         }
 #endif
@@ -115,9 +115,11 @@ public struct Test
 }
 ```
 
-will essentially inject this code into your project
+will essentially inject this code into your project. Note that preprocessor directives such as `#if !RO_GEN` are retained in the generated code, but since `#define RO_GEN` is added to the top of the file, the enclosed code is excluded from compilation.
 
 ```csharp
+#define RO_GEN
+
 public readonly struct ReadOnlyTest
 {
     public readonly float X;
@@ -133,8 +135,14 @@ public readonly struct ReadOnlyTest
     public Vector3 Vector3
     {
         get => new Vector3(X, Y, Z);
+#if !RO_GEN
+        // This section is only applicable for the mutable version of this struct
+        set {
+            X = value.X;
+            Y = value.Y;
+            Z = value.Z;
+        }
+#endif
     }
 }
 ```
-
-will inject this code into your project.
