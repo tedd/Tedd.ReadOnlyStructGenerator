@@ -13,10 +13,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       with:
         fetch-depth: 0
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       with:
         dotnet-version: 10.0.x
     - name: Restore dependencies
@@ -37,7 +41,9 @@ jobs:
     # Publish
     - name: publish on version change
       id: publish_nuget
-      uses: tedd/publish-nuget-neo@v0.0.20 
+      uses: tedd/publish-nuget-neo@v1.0.2
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       with:
         # NuGet API key to authenticate on NuGet server.
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
