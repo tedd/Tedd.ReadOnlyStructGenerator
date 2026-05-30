@@ -7,9 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tedd.ReadOnlyStructGenerato
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tedd.ReadOnlyStructGenerator.Test", "Tedd.ReadOnlyStructGenerator.Test\Tedd.ReadOnlyStructGenerator.Test.csproj", "{319E9513-C11E-4266-A446-D02DC0B38826}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tedd.ReadOnlyStructGenerator.Archive", "Tedd.ReadOnlyStructGenerator.Archive\Tedd.ReadOnlyStructGenerator.Archive.csproj", "{3A0FC7AF-075D-4E88-93A8-7513C36BBAAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tedd.ReadOnlyStructGenerator.Archive", "Tedd.ReadOnlyStructGenerator.Archive\Tedd.ReadOnlyStructGenerator.Archive.csproj", "{3A0FC7AF-075D-4E88-93A8-7513C36BBAAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tedd.ReadOnlyStructGenerator.Benchmarks", "Tedd.ReadOnlyStructGenerator.Benchmarks\Tedd.ReadOnlyStructGenerator.Benchmarks.csproj", "{6C9C99DA-EF10-4D1B-A736-46AFCF302218}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tedd.ReadOnlyStructGenerator.Benchmarks", "Tedd.ReadOnlyStructGenerator.Benchmarks\Tedd.ReadOnlyStructGenerator.Benchmarks.csproj", "{6C9C99DA-EF10-4D1B-A736-46AFCF302218}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
