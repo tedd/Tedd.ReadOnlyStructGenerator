@@ -22,7 +22,7 @@ public class StructCopyGenerator : IIncrementalGenerator // ISourceGenerator
 namespace Tedd.ReadOnlyStructGenerator.Archive;
 
 /// <summary>
-/// Generates a read-onlu version of a struct, with ReadOnly preceding name.
+/// Generates a read-only version of a struct, with ReadOnly preceding name.
 /// </summary>
 [AttributeUsage(AttributeTargets.Struct)]
 public class {attributeName}Attribute: Attribute
