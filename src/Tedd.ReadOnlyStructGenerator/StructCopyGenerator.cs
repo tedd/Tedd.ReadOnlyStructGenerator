@@ -93,11 +93,37 @@ public class {attributeName}Attribute: Attribute
         // Time Complexity: O(1) for generator initialization pipeline setup.
         // Space Complexity: O(1) minimal closure allocations.
         var structDeclarations = context.SyntaxProvider.CreateSyntaxProvider(
-            static (n, _) => n is StructDeclarationSyntax s && s.AttributeLists.Count > 0,
+            static (n, _) => HasGenerateReadOnlyStructAttribute(n),
             static (n, _) => (StructDeclarationSyntax)n.Node)
             .Where(static m => m is not null);
 
         context.RegisterSourceOutput(structDeclarations, static (spc, source) => GenerateClass(spc, source));
+    }
+
+    private static bool HasGenerateReadOnlyStructAttribute(SyntaxNode node)
+    {
+        if (node is not StructDeclarationSyntax structDeclaration || structDeclaration.AttributeLists.Count == 0)
+            return false;
+
+        foreach (var attributeList in structDeclaration.AttributeLists)
+        foreach (var attribute in attributeList.Attributes)
+            if (IsGenerateReadOnlyStructAttributeName(attribute.Name))
+                return true;
+
+        return false;
+    }
+
+    private static bool IsGenerateReadOnlyStructAttributeName(NameSyntax nameSyntax)
+    {
+        var attributeName = nameSyntax switch
+        {
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            QualifiedNameSyntax qualified => qualified.Right.Identifier.ValueText,
+            AliasQualifiedNameSyntax aliasQualified => aliasQualified.Name.Identifier.ValueText,
+            _ => null
+        };
+
+        return attributeName is "GenerateReadOnlyStruct" or "GenerateReadOnlyStructAttribute";
     }
 
 
