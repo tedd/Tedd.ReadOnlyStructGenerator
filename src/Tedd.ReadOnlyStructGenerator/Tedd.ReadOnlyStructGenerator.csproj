@@ -1,10 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+<NoWarn>$(NoWarn);RS1035;RS1036</NoWarn>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 		<CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
 		<IsRoslynComponent>true</IsRoslynComponent>
+<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
@@ -21,7 +23,7 @@
 		<PackageProjectUrl>https://github.com/tedd/Tedd.ReadOnlyStructGenerator</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/tedd/Tedd.ReadOnlyStructGenerator.git</RepositoryUrl>
 		<RepositoryType>Git</RepositoryType>
-		<Version>1.0.6</Version>
+		<Version>1.0.8</Version>
 		<PackageLicenseExpression></PackageLicenseExpression>
 		<SignAssembly>false</SignAssembly>
 		<DelaySign>false</DelaySign>
@@ -43,11 +45,12 @@
 	</ItemGroup>
 
 	<PropertyGroup>
+<NoWarn>$(NoWarn);RS1035;RS1036</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
 	</ItemGroup>
 
 	<ItemGroup>

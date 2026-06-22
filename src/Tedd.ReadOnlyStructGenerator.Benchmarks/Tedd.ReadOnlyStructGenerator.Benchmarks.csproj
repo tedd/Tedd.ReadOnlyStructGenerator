@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tedd.ReadOnlyStructGenerator\Tedd.ReadOnlyStructGenerator.csproj" />
+    <ProjectReference Include="..\Tedd.ReadOnlyStructGenerator.Archive\Tedd.ReadOnlyStructGenerator.Archive.csproj" />
+  </ItemGroup>
+
+</Project>
