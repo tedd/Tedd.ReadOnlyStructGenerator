@@ -4,3 +4,6 @@
 - Substituted `DescendantNodes().OfType<T>()` with `Node.Parent` traversal to determine namespaces efficiently, drastically reducing tree walking depth (O(P) where P is tree depth).
 - Minimized iterative LINQ operations across `structDeclaration.Members` to a single pass structure evaluating each node's `SyntaxKind`, utilizing standard generic `List<T>` elements avoiding excessive underlying array permutations (O(M)).
 - Resulted in ~9% performance augmentation (latency decreased from 596us -> 547us, standard deviation and GC allocations slightly reduced).
+## 2026-07-26 - Tedd.ReadOnlyStructGenerator Optimization
+**Observation:** The original `StructCopyGenerator` algorithm constructed full syntax trees and formatted via `NormalizeWhitespace()`, causing massive allocations and high latency.
+**Strategic Action:** Substituted `SyntaxFactory` manipulation with `StringBuilder` programmatic string formulation. This architectural modification yielded a 49% reduction in memory allocation (125.99 KB -> 64.45 KB) and a 67% decrease in execution time (710 us -> 231 us), validating the hypothesis that avoiding comprehensive syntax tree instantiation is the primary vector for optimizing Roslyn Source Generators.
