@@ -1,0 +1,5 @@
+## 2024-05-18 - Dependency Modernization
+
+**Observation:** The primary source generator package (`Tedd.ReadOnlyStructGenerator.csproj`) and its archive (`Tedd.ReadOnlyStructGenerator.Archive.csproj`) use `Microsoft.CodeAnalysis.CSharp` and `Microsoft.CodeAnalysis.Analyzers` version 4.14.0. Updating these to 5.x will break compatibility with the Roslyn compiler shipped in older .NET SDKs (e.g., .NET 8 SDK), resulting in `CS9057` compiler version mismatch errors for consumers. However, test SDK and tool dependencies in the Test and Benchmarks projects (`Microsoft.NET.Test.Sdk`, `Microsoft.CodeAnalysis.CSharp`) can safely be updated. Additionally, testing against `net9.0` validates compatibility on modern frameworks.
+
+**Strategic Action:** Keep `Microsoft.CodeAnalysis.*` at 4.14.0 in the generator and archive projects. Update `Microsoft.NET.Test.Sdk` to 18.8.1 in the Test project, and `Microsoft.CodeAnalysis.CSharp` to 5.6.0 in the Benchmarks project. The `net9.0` SDK is missing from the build environment, so `net8.0` is maintained for test and benchmark compilation.
