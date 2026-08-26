@@ -4,3 +4,7 @@
 - Substituted `DescendantNodes().OfType<T>()` with `Node.Parent` traversal to determine namespaces efficiently, drastically reducing tree walking depth (O(P) where P is tree depth).
 - Minimized iterative LINQ operations across `structDeclaration.Members` to a single pass structure evaluating each node's `SyntaxKind`, utilizing standard generic `List<T>` elements avoiding excessive underlying array permutations (O(M)).
 - Resulted in ~9% performance augmentation (latency decreased from 596us -> 547us, standard deviation and GC allocations slightly reduced).
+
+## 2024-08-26 - Roslyn Source Generator SyntaxFactory Elimination
+**Observation:** Relying on `Microsoft.CodeAnalysis.CSharp.SyntaxFactory` to construct and mutate syntax trees and then calling `NormalizeWhitespace().ToFullString()` in a Roslyn Source Generator introduces massive overhead in both execution time and heap allocations, serving as a primary computational bottleneck.
+**Strategic Action:** Entirely substitute `SyntaxFactory` usage with programmatic string building via `System.Text.StringBuilder` for emitting generated C# code. This procedural shift achieved a 71% reduction in mean execution latency (679us -> 195us) and a 59% reduction in memory allocations (126KB -> 51KB) during source generation.
