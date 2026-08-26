@@ -117,13 +117,13 @@ public class {attributeName}Attribute: Attribute
     /// <summary>
     /// Generates the read-only struct implementation.
     /// Big O Notation:
-    /// Time Complexity: O(M + P) where M is the number of members in the struct and P is the depth of the parent syntax tree nodes to resolve the namespace and using directives. This is an improvement over the previous O(N * M) syntax tree traversals.
-    /// Space Complexity: O(M) for creating lists of members and variable declarators, avoiding unnecessary allocations associated with LINQ closures and excessive arrays.
+    /// Time Complexity: O(M + P + L) where M is the number of members in the struct, P is the depth of the parent syntax tree nodes to resolve namespaces, and L is the total length of the generated string.
+    /// Space Complexity: O(L) for allocating the single output StringBuilder, completely eliminating the O(M) Roslyn tree allocations and large object heap usage from `SyntaxFactory.NormalizeWhitespace().ToFullString()`.
     /// </summary>
     private static void GenerateClass(SourceProductionContext context, StructDeclarationSyntax structDeclaration)
     {
         Debug.WriteLine("Execute code generator");
-        var log = new StringBuilder();
+        var sourceBuilder = new StringBuilder();
         //try
         //{
         var nsDic = new Dictionary<string, NamespaceDeclarationSyntax>();
@@ -163,7 +163,7 @@ public class {attributeName}Attribute: Attribute
 
                 // Get all fields
                 var fields = new List<VariableDeclaratorSyntax>();
-                var fieldMembers = new List<MemberDeclarationSyntax>();
+                var allFields = new List<FieldDeclarationSyntax>();
                 var constructorMembers = new List<MemberDeclarationSyntax>();
                 var otherMembers = new List<MemberDeclarationSyntax>();
                 var ctorFields = new List<VariableDeclaratorSyntax>();
@@ -172,17 +172,14 @@ public class {attributeName}Attribute: Attribute
                 {
                     if (member is FieldDeclarationSyntax field)
                     {
-                        var fieldMod = field;
-                        if (!field.Modifiers.Any(a => a.IsKind(SyntaxKind.ReadOnlyKeyword) || a.IsKind(SyntaxKind.ConstKeyword)))
-                            fieldMod = field.AddModifiers(roToken);
-                        fieldMembers.Add(fieldMod);
+                        allFields.Add(field);
                         fields.AddRange(field.Declaration.Variables);
                         if (!field.Modifiers.Any(a => a.IsKind(SyntaxKind.ConstKeyword)))
                             ctorFields.AddRange(field.Declaration.Variables);
                     }
                     else if (member is ConstructorDeclarationSyntax constructor)
                     {
-                        constructorMembers.Add(constructor.WithIdentifier(SyntaxFactory.Identifier("ReadOnly" + structName)));
+                        constructorMembers.Add(constructor);
                     }
                     else
                     {
@@ -190,72 +187,6 @@ public class {attributeName}Attribute: Attribute
                     }
                 }
 
-
-
-                // Clone each struct declaration.
-                var structCopyDeclaration = structDeclaration
-                        .WithIdentifier(SyntaxFactory.Identifier("ReadOnly" + structName))
-                        .WithModifiers(structDeclaration.Modifiers.Add(SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)))
-                        .WithAttributeLists(structDeclaration.AttributeLists)
-                        // Add ReadOnly attribute to 
-                        .WithMembers(SyntaxFactory.List(fieldMembers))
-                        .AddMembers(constructorMembers.ToArray())
-                        .AddMembers(otherMembers.ToArray())
-                    ;
-                //SyntaxFactory.List(
-                //        structDeclaration.Members
-                //            .Select(member =>  member.AddModifiers(SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)))
-                //    ))
-                ;
-
-
-                if (generateCopyConstructor)
-                {
-                    // Add a constructor that takes the original struct as a parameter and assigns the fields.
-                    structCopyDeclaration = structCopyDeclaration
-                        .AddMembers(SyntaxFactory.ConstructorDeclaration("ReadOnly" + structName)
-                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-                            .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("value")).WithType(SyntaxFactory.ParseTypeName(structName)))
-                            // Add a body to the constructor that assigns the fields.
-                            .WithBody(SyntaxFactory.Block(
-                                ctorFields.Select(field => SyntaxFactory.ExpressionStatement(
-                                        SyntaxFactory.AssignmentExpression(
-                                            SyntaxKind.SimpleAssignmentExpression,
-                                            SyntaxFactory.IdentifierName(field.Identifier),
-                                            SyntaxFactory.MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                SyntaxFactory.IdentifierName("value"),
-                                                SyntaxFactory.IdentifierName(field.Identifier)))))
-                                    .ToArray())));
-                }
-
-                if (generateConstructor)
-                {
-                    // Add constructor that takes all fields as parameters.
-                    structCopyDeclaration = structCopyDeclaration
-                        .AddMembers(SyntaxFactory.ConstructorDeclaration("ReadOnly" + structName)
-                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-                            .AddParameterListParameters(fields
-                                .Select(field => SyntaxFactory
-                                    .Parameter(SyntaxFactory.Identifier(ToLowerFirstChar(field.Identifier.Text)))
-                                    .WithType(SyntaxFactory.ParseTypeName(((VariableDeclarationSyntax)field.Parent!)?.Type.ToString() ?? "object")))
-                                .ToArray())
-                            // Add a body to the constructor that assigns the fields.
-                            .WithBody(SyntaxFactory.Block(
-                                ctorFields.Select(field => SyntaxFactory.ExpressionStatement(
-                                        SyntaxFactory.AssignmentExpression(
-                                            SyntaxKind.SimpleAssignmentExpression,
-                                            SyntaxFactory.MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                SyntaxFactory.IdentifierName("this"),
-                                                SyntaxFactory.IdentifierName(field.Identifier)
-                                            ),
-                                            SyntaxFactory.IdentifierName(ToLowerFirstChar(field.Identifier.Text))
-                                        )))
-                                    .ToArray())));
-                }
-
-                // Get root of document
                 var root = (SyntaxNode)structDeclaration;
                 string? nsStr = null;
                 var usingsList = new List<UsingDirectiveSyntax>();
@@ -278,22 +209,91 @@ public class {attributeName}Attribute: Attribute
 
                 nsStr ??= "Error.Namespace.Not.Found";
                 var usings = usingsList.ToArray();
-                //var usingsStr = string.Join("\r\n",usings.Select(s => s.ToString()));
-                // Get or create namespace struct
-                var nsObj = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(nsStr))
-                    .WithLeadingTrivia(SyntaxFactory.Comment($"// This file was generated by Tedd.{nameof(StructCopyGenerator)}"))
-                    .AddUsings(usings)
-                    .AddMembers(structCopyDeclaration);
 
-                // Write to file
-                //var src = usingsStr+"\r\n\r\n"+nsObj.NormalizeWhitespace().ToFullString();
-                var src = "#define RO_GEN\r\n\r\n"
-                          + nsObj.NormalizeWhitespace().ToFullString();
+                sourceBuilder.Clear();
+                sourceBuilder.AppendLine("#define RO_GEN");
+                sourceBuilder.AppendLine();
+                sourceBuilder.AppendLine($"// This file was generated by Tedd.{nameof(StructCopyGenerator)}");
+                foreach (var u in usings)
+                {
+                    sourceBuilder.AppendLine(u.ToString());
+                }
+
+                sourceBuilder.AppendLine();
+                sourceBuilder.AppendLine($"namespace {nsStr}");
+                sourceBuilder.AppendLine("{");
+
+                foreach(var attrList in structDeclaration.AttributeLists)
+                {
+                    sourceBuilder.AppendLine($"    {attrList.ToString()}");
+                }
+
+                var modifiers = structDeclaration.Modifiers.ToString();
+                if (!modifiers.Contains("readonly"))
+                {
+                    modifiers = modifiers == "" ? "readonly" : modifiers + " readonly";
+                }
+
+                sourceBuilder.AppendLine($"    {modifiers} struct ReadOnly{structName}");
+                sourceBuilder.AppendLine("    {");
+
+                foreach (var field in allFields)
+                {
+                    var fieldMods = field.Modifiers.ToString();
+                    if (!fieldMods.Contains("readonly") && !fieldMods.Contains("const"))
+                    {
+                        fieldMods = fieldMods == "" ? "readonly" : fieldMods + " readonly";
+                    }
+                    foreach(var attrList in field.AttributeLists)
+                    {
+                        sourceBuilder.AppendLine($"        {attrList.ToString()}");
+                    }
+                    sourceBuilder.AppendLine($"        {fieldMods} {field.Declaration.Type.ToString()} {field.Declaration.Variables.ToString()};");
+                }
+
+                foreach (var ctor in constructorMembers)
+                {
+                    var ctorSyntax = (ConstructorDeclarationSyntax)ctor;
+                    var newCtor = ctorSyntax.WithIdentifier(SyntaxFactory.Identifier("ReadOnly" + structName));
+                    sourceBuilder.AppendLine("        " + newCtor.NormalizeWhitespace().ToString());
+                }
+
+                foreach (var other in otherMembers)
+                {
+                    sourceBuilder.AppendLine("        " + other.ToString());
+                }
+
+                if (generateCopyConstructor)
+                {
+                    sourceBuilder.AppendLine($"        public ReadOnly{structName}({structName} value)");
+                    sourceBuilder.AppendLine("        {");
+                    foreach (var ctorField in ctorFields)
+                    {
+                        sourceBuilder.AppendLine($"            this.{ctorField.Identifier.Text} = value.{ctorField.Identifier.Text};");
+                    }
+                    sourceBuilder.AppendLine("        }");
+                }
+
+                if (generateConstructor)
+                {
+                    var paramList = string.Join(", ", fields.Select(f => $"{((VariableDeclarationSyntax)f.Parent!).Type.ToString()} {ToLowerFirstChar(f.Identifier.Text)}"));
+                    sourceBuilder.AppendLine($"        public ReadOnly{structName}({paramList})");
+                    sourceBuilder.AppendLine("        {");
+                    foreach (var ctorField in ctorFields)
+                    {
+                        sourceBuilder.AppendLine($"            this.{ctorField.Identifier.Text} = {ToLowerFirstChar(ctorField.Identifier.Text)};");
+                    }
+                    sourceBuilder.AppendLine("        }");
+                }
+
+                sourceBuilder.AppendLine("    }");
+                sourceBuilder.AppendLine("}");
+
+                var src = sourceBuilder.ToString();
                 var file = $"{nsStr}.{structName}.ReadOnlyStructs.cs";
                 Debug.WriteLine("File generated: " + file);
                 Debug.WriteLine(src);
                 context.AddSource(file, SourceText.From(src, Encoding.UTF8));
-                //context.AddSource(file, src);
             }
         }
     }
