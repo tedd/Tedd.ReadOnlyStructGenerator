@@ -1,6 +1,14 @@
 # Tedd.ReadOnlyStructGenerator
 .NET Source Generator for duplicating structs to read-only copies.
 
+## Architecture & Execution Flow
+Tedd.ReadOnlyStructGenerator is strictly a **Roslyn compile-time source generator pipeline**. It integrates directly with the .NET compiler to evaluate syntax trees and emit supplementary C# source files during compilation.
+
+**Important Structural Articulations:**
+* The framework operates entirely at compile-time.
+* The system does **not** utilize, implement, or rely upon any runtime components, specifically rejecting paradigms such as **hierarchical data binding** or **routed events**.
+* Code generation is empirically deterministic based solely on syntax node inspection.
+
 Adding `[GenerateReadOnlyStruct]` to a struct like this
 
 ```csharp
