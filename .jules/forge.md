@@ -1,0 +1,5 @@
+## 2025-02-12 - Dependency and Package Drift Modernization
+
+**Observation:** `Microsoft.CodeAnalysis.Analyzers` and `Microsoft.CodeAnalysis.CSharp` in `Tedd.ReadOnlyStructGenerator` and `Tedd.ReadOnlyStructGenerator.Archive` are outdated but upgrading them to 5.x.x versions could break backward compatibility with consumers using older .NET SDKs. `Tedd.ReadOnlyStructGenerator.Archive` and `Tedd.ReadOnlyStructGenerator.Benchmarks` are missing the `<IsPackable>false</IsPackable>` element which causes packing failures. Dependencies in `Tedd.ReadOnlyStructGenerator.Test` and `Tedd.ReadOnlyStructGenerator.Benchmarks` are outdated.
+
+**Strategic Action:** Keep `Microsoft.CodeAnalysis` dependencies at `4.14.0` in the main and archive projects to maintain SDK compatibility for the source generator. Add `<IsPackable>false</IsPackable>` to `Tedd.ReadOnlyStructGenerator.Archive` and `Tedd.ReadOnlyStructGenerator.Benchmarks`. Upgrade `coverlet.collector` (10.1.0), `Microsoft.NET.Test.Sdk` (18.10.1), and `xunit.runner.visualstudio` (4.0.0) in the Test project, and `Microsoft.CodeAnalysis.CSharp` (5.9.0) in the Benchmark project.
