@@ -117,184 +117,172 @@ public class {attributeName}Attribute: Attribute
     /// <summary>
     /// Generates the read-only struct implementation.
     /// Big O Notation:
-    /// Time Complexity: O(M + P) where M is the number of members in the struct and P is the depth of the parent syntax tree nodes to resolve the namespace and using directives. This is an improvement over the previous O(N * M) syntax tree traversals.
-    /// Space Complexity: O(M) for creating lists of members and variable declarators, avoiding unnecessary allocations associated with LINQ closures and excessive arrays.
+    /// Time Complexity: O(M + P) where M is the number of members in the struct and P is the depth of the parent syntax tree nodes to resolve the namespace and using directives. Building with StringBuilder reduces latency by avoiding SyntaxFactory normalization.
+    /// Space Complexity: O(M) for creating lists of members, and O(S) for the final string representation, minimizing heap allocations via programmatic string building instead of large Roslyn node trees.
     /// </summary>
     private static void GenerateClass(SourceProductionContext context, StructDeclarationSyntax structDeclaration)
     {
         Debug.WriteLine("Execute code generator");
-        var log = new StringBuilder();
-        //try
-        //{
-        var nsDic = new Dictionary<string, NamespaceDeclarationSyntax>();
 
-        var roToken = SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword);
+        var roToken = SyntaxFactory.Token(SyntaxTriviaList.Empty, SyntaxKind.ReadOnlyKeyword, SyntaxTriviaList.Create(SyntaxFactory.Space));
 
-        // Get all struct declarations that have the ReadOnlyAttribute applied.
-        //var root = syntaxTree.GetRoot().DescendantNodes().OfType<StructDeclarationSyntax>();
-        //foreach (var structDeclaration in root)
-
-
-
+        foreach (var attributeList in structDeclaration.AttributeLists)
         {
-            foreach (var attributeList in structDeclaration.AttributeLists)
+            context.CancellationToken.ThrowIfCancellationRequested();
+            AttributeSyntax? generateReadOnlyStructAttribute = null;
+            foreach (var attribute in attributeList.Attributes)
             {
-                context.CancellationToken.ThrowIfCancellationRequested();
-                // Check if the attribute is the one we're looking for.
-                AttributeSyntax? generateReadOnlyStructAttribute = null;
-                foreach (var attribute in attributeList.Attributes)
+                if (attribute.Name.ToString() == attributeName)
                 {
-                    if (attribute.Name.ToString() == attributeName)
-                    {
-                        generateReadOnlyStructAttribute = attribute;
-                        break;
-                    }
+                    generateReadOnlyStructAttribute = attribute;
+                    break;
                 }
-
-                if (generateReadOnlyStructAttribute == null)
-                    continue;
-
-                var generateConstructor = generateReadOnlyStructAttribute.ArgumentList?.Arguments.Count > 0 && generateReadOnlyStructAttribute.ArgumentList?.Arguments[0].Expression.ToString() == "true";
-                var generateCopyConstructor = generateReadOnlyStructAttribute.ArgumentList?.Arguments.Count > 1 && generateReadOnlyStructAttribute.ArgumentList?.Arguments[1].Expression.ToString() == "true";
-
-
-                // Get name of struct
-                var structName = structDeclaration.Identifier.Text;
-
-                // Get all fields
-                var fields = new List<VariableDeclaratorSyntax>();
-                var fieldMembers = new List<MemberDeclarationSyntax>();
-                var constructorMembers = new List<MemberDeclarationSyntax>();
-                var otherMembers = new List<MemberDeclarationSyntax>();
-                var ctorFields = new List<VariableDeclaratorSyntax>();
-
-                foreach (var member in structDeclaration.Members)
-                {
-                    if (member is FieldDeclarationSyntax field)
-                    {
-                        var fieldMod = field;
-                        if (!field.Modifiers.Any(a => a.IsKind(SyntaxKind.ReadOnlyKeyword) || a.IsKind(SyntaxKind.ConstKeyword)))
-                            fieldMod = field.AddModifiers(roToken);
-                        fieldMembers.Add(fieldMod);
-                        fields.AddRange(field.Declaration.Variables);
-                        if (!field.Modifiers.Any(a => a.IsKind(SyntaxKind.ConstKeyword)))
-                            ctorFields.AddRange(field.Declaration.Variables);
-                    }
-                    else if (member is ConstructorDeclarationSyntax constructor)
-                    {
-                        constructorMembers.Add(constructor.WithIdentifier(SyntaxFactory.Identifier("ReadOnly" + structName)));
-                    }
-                    else
-                    {
-                        otherMembers.Add(member);
-                    }
-                }
-
-
-
-                // Clone each struct declaration.
-                var structCopyDeclaration = structDeclaration
-                        .WithIdentifier(SyntaxFactory.Identifier("ReadOnly" + structName))
-                        .WithModifiers(structDeclaration.Modifiers.Add(SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)))
-                        .WithAttributeLists(structDeclaration.AttributeLists)
-                        // Add ReadOnly attribute to 
-                        .WithMembers(SyntaxFactory.List(fieldMembers))
-                        .AddMembers(constructorMembers.ToArray())
-                        .AddMembers(otherMembers.ToArray())
-                    ;
-                //SyntaxFactory.List(
-                //        structDeclaration.Members
-                //            .Select(member =>  member.AddModifiers(SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)))
-                //    ))
-                ;
-
-
-                if (generateCopyConstructor)
-                {
-                    // Add a constructor that takes the original struct as a parameter and assigns the fields.
-                    structCopyDeclaration = structCopyDeclaration
-                        .AddMembers(SyntaxFactory.ConstructorDeclaration("ReadOnly" + structName)
-                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-                            .AddParameterListParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier("value")).WithType(SyntaxFactory.ParseTypeName(structName)))
-                            // Add a body to the constructor that assigns the fields.
-                            .WithBody(SyntaxFactory.Block(
-                                ctorFields.Select(field => SyntaxFactory.ExpressionStatement(
-                                        SyntaxFactory.AssignmentExpression(
-                                            SyntaxKind.SimpleAssignmentExpression,
-                                            SyntaxFactory.IdentifierName(field.Identifier),
-                                            SyntaxFactory.MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                SyntaxFactory.IdentifierName("value"),
-                                                SyntaxFactory.IdentifierName(field.Identifier)))))
-                                    .ToArray())));
-                }
-
-                if (generateConstructor)
-                {
-                    // Add constructor that takes all fields as parameters.
-                    structCopyDeclaration = structCopyDeclaration
-                        .AddMembers(SyntaxFactory.ConstructorDeclaration("ReadOnly" + structName)
-                            .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-                            .AddParameterListParameters(fields
-                                .Select(field => SyntaxFactory
-                                    .Parameter(SyntaxFactory.Identifier(ToLowerFirstChar(field.Identifier.Text)))
-                                    .WithType(SyntaxFactory.ParseTypeName(((VariableDeclarationSyntax)field.Parent!)?.Type.ToString() ?? "object")))
-                                .ToArray())
-                            // Add a body to the constructor that assigns the fields.
-                            .WithBody(SyntaxFactory.Block(
-                                ctorFields.Select(field => SyntaxFactory.ExpressionStatement(
-                                        SyntaxFactory.AssignmentExpression(
-                                            SyntaxKind.SimpleAssignmentExpression,
-                                            SyntaxFactory.MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                SyntaxFactory.IdentifierName("this"),
-                                                SyntaxFactory.IdentifierName(field.Identifier)
-                                            ),
-                                            SyntaxFactory.IdentifierName(ToLowerFirstChar(field.Identifier.Text))
-                                        )))
-                                    .ToArray())));
-                }
-
-                // Get root of document
-                var root = (SyntaxNode)structDeclaration;
-                string? nsStr = null;
-                var usingsList = new List<UsingDirectiveSyntax>();
-
-                while (root.Parent != null)
-                {
-                    root = root.Parent;
-                    if (nsStr == null)
-                    {
-                        if (root is FileScopedNamespaceDeclarationSyntax fsNamespace)
-                            nsStr = fsNamespace.Name.ToString();
-                        else if (root is NamespaceDeclarationSyntax namespaceDecl)
-                            nsStr = namespaceDecl.Name.ToString();
-                    }
-                    if (root is CompilationUnitSyntax compilationUnit)
-                        usingsList.AddRange(compilationUnit.Usings);
-                    else if (root is NamespaceDeclarationSyntax namespaceDeclWithUsings)
-                        usingsList.AddRange(namespaceDeclWithUsings.Usings);
-                }
-
-                nsStr ??= "Error.Namespace.Not.Found";
-                var usings = usingsList.ToArray();
-                //var usingsStr = string.Join("\r\n",usings.Select(s => s.ToString()));
-                // Get or create namespace struct
-                var nsObj = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(nsStr))
-                    .WithLeadingTrivia(SyntaxFactory.Comment($"// This file was generated by Tedd.{nameof(StructCopyGenerator)}"))
-                    .AddUsings(usings)
-                    .AddMembers(structCopyDeclaration);
-
-                // Write to file
-                //var src = usingsStr+"\r\n\r\n"+nsObj.NormalizeWhitespace().ToFullString();
-                var src = "#define RO_GEN\r\n\r\n"
-                          + nsObj.NormalizeWhitespace().ToFullString();
-                var file = $"{nsStr}.{structName}.ReadOnlyStructs.cs";
-                Debug.WriteLine("File generated: " + file);
-                Debug.WriteLine(src);
-                context.AddSource(file, SourceText.From(src, Encoding.UTF8));
-                //context.AddSource(file, src);
             }
+
+            if (generateReadOnlyStructAttribute == null)
+                continue;
+
+            var generateConstructor = generateReadOnlyStructAttribute.ArgumentList?.Arguments.Count > 0 && generateReadOnlyStructAttribute.ArgumentList?.Arguments[0].Expression.ToString() == "true";
+            var generateCopyConstructor = generateReadOnlyStructAttribute.ArgumentList?.Arguments.Count > 1 && generateReadOnlyStructAttribute.ArgumentList?.Arguments[1].Expression.ToString() == "true";
+
+            var structName = structDeclaration.Identifier.Text;
+
+            var fields = new List<VariableDeclaratorSyntax>();
+            var fieldMembers = new List<MemberDeclarationSyntax>();
+            var constructorMembers = new List<MemberDeclarationSyntax>();
+            var otherMembers = new List<MemberDeclarationSyntax>();
+            var ctorFields = new List<VariableDeclaratorSyntax>();
+
+            foreach (var member in structDeclaration.Members)
+            {
+                if (member is FieldDeclarationSyntax field)
+                {
+                    var fieldMod = field;
+                    if (!field.Modifiers.Any(a => a.IsKind(SyntaxKind.ReadOnlyKeyword) || a.IsKind(SyntaxKind.ConstKeyword)))
+                        fieldMod = field.AddModifiers(roToken);
+                    fieldMembers.Add(fieldMod);
+                    fields.AddRange(field.Declaration.Variables);
+                    if (!field.Modifiers.Any(a => a.IsKind(SyntaxKind.ConstKeyword)))
+                        ctorFields.AddRange(field.Declaration.Variables);
+                }
+                else if (member is ConstructorDeclarationSyntax constructor)
+                {
+                    constructorMembers.Add(constructor.WithIdentifier(SyntaxFactory.Identifier("ReadOnly" + structName)));
+                }
+                else
+                {
+                    otherMembers.Add(member);
+                }
+            }
+
+            var root = (SyntaxNode)structDeclaration;
+            string? nsStr = null;
+            var usingsList = new List<UsingDirectiveSyntax>();
+
+            while (root.Parent != null)
+            {
+                root = root.Parent;
+                if (nsStr == null)
+                {
+                    if (root is FileScopedNamespaceDeclarationSyntax fsNamespace)
+                        nsStr = fsNamespace.Name.ToString();
+                    else if (root is NamespaceDeclarationSyntax namespaceDecl)
+                        nsStr = namespaceDecl.Name.ToString();
+                }
+                if (root is CompilationUnitSyntax compilationUnit)
+                    usingsList.AddRange(compilationUnit.Usings);
+                else if (root is NamespaceDeclarationSyntax namespaceDeclWithUsings)
+                    usingsList.AddRange(namespaceDeclWithUsings.Usings);
+            }
+
+            nsStr ??= "Error.Namespace.Not.Found";
+
+            var sb = new StringBuilder();
+            sb.AppendLine("#define RO_GEN");
+            sb.AppendLine();
+            sb.AppendLine($"// This file was generated by Tedd.{nameof(StructCopyGenerator)}");
+
+            foreach (var u in usingsList)
+            {
+                sb.AppendLine(u.ToString());
+            }
+            sb.AppendLine();
+
+            sb.AppendLine($"namespace {nsStr}");
+            sb.AppendLine("{");
+
+            foreach (var attrList in structDeclaration.AttributeLists)
+            {
+                sb.AppendLine($"    {attrList.ToFullString().TrimEnd()}");
+            }
+
+            var structMods = structDeclaration.Modifiers;
+            if (!structMods.Any(m => m.IsKind(SyntaxKind.ReadOnlyKeyword)))
+            {
+                structMods = structMods.Add(roToken);
+            }
+            var typeParameters = structDeclaration.TypeParameterList?.ToFullString() ?? "";
+            var baseList = structDeclaration.BaseList?.ToFullString() ?? "";
+            var constraintClauses = structDeclaration.ConstraintClauses.ToFullString();
+
+            sb.AppendLine($"    {structMods.ToFullString()}struct ReadOnly{structName}{typeParameters}{baseList} {constraintClauses}");
+            sb.AppendLine("    {");
+
+            foreach (var field in fieldMembers)
+            {
+                sb.AppendLine($"        {field.ToFullString().TrimEnd()}");
+            }
+
+            foreach (var constructor in constructorMembers)
+            {
+                sb.AppendLine($"        {constructor.ToFullString().TrimEnd()}");
+            }
+
+            foreach (var other in otherMembers)
+            {
+                sb.AppendLine($"        {other.ToFullString().TrimEnd()}");
+            }
+
+            if (generateCopyConstructor)
+            {
+                sb.AppendLine($"        public ReadOnly{structName}({structName} value)");
+                sb.AppendLine("        {");
+                foreach (var field in ctorFields)
+                {
+                    sb.AppendLine($"            {field.Identifier.Text} = value.{field.Identifier.Text};");
+                }
+                sb.AppendLine("        }");
+            }
+
+            if (generateConstructor)
+            {
+                sb.Append($"        public ReadOnly{structName}(");
+                for (int i = 0; i < fields.Count; i++)
+                {
+                    var field = fields[i];
+                    var typeName = ((VariableDeclarationSyntax)field.Parent!)?.Type.ToString() ?? "object";
+                    var paramName = ToLowerFirstChar(field.Identifier.Text);
+                    sb.Append($"{typeName} {paramName}");
+                    if (i < fields.Count - 1) sb.Append(", ");
+                }
+                sb.AppendLine(")");
+                sb.AppendLine("        {");
+                foreach (var field in ctorFields)
+                {
+                    var paramName = ToLowerFirstChar(field.Identifier.Text);
+                    sb.AppendLine($"            this.{field.Identifier.Text} = {paramName};");
+                }
+                sb.AppendLine("        }");
+            }
+
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
+
+            var src = sb.ToString();
+            var file = $"{nsStr}.{structName}.ReadOnlyStructs.cs";
+            Debug.WriteLine("File generated: " + file);
+            Debug.WriteLine(src);
+            context.AddSource(file, SourceText.From(src, Encoding.UTF8));
         }
     }
 
