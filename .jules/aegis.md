@@ -1,0 +1,3 @@
+## 2023-10-27 - Tedd.ReadOnlyStructGenerator Test Coverage Expansion
+**Observation:** The source generator's internal execution path (`StructCopyGenerator.cs`) was largely uncovered by the existing tests (`UnitTest1.cs`) which only validated the generated compilation output, treating the generator as untestable code in isolation.
+**Strategic Action:** Deployed `CSharpGeneratorDriver` alongside `CSharpCompilation` in a new `GeneratorTests` xUnit suite. Modified `<ProjectReference>` to remove `ReferenceOutputAssembly="false"` so the generator could be instantiated in memory. This allowed parameterized inputs across multiple struct definitions to systematically execute the Roslyn nodes, achieving >95% statement and >90% branch coverage over the core logic.
